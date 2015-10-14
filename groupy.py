@@ -10,12 +10,18 @@ import csv
 
 def main():
     people = set(person for person in
-                 read_csv_data('FallRetreat2015Registrantsv2.csv'))
+                 read_csv_data('data/FR2015RegistrantsFinal.csv'))
     peopleNames = [person.full_name for person in people]
     matchedMales = set()
     usedPeople = set()
     matchedFemales = set()
     print(len(people))
+    peopleWithRoommates = [person for person in people if person.roommates]
+    peopleWithoutRoommates = [person for person in people
+                              if not person.roommates]
+    shuffle(peopleWithRoommates)
+    shuffle(peopleWithoutRoommates)
+    people = peopleWithRoommates + peopleWithoutRoommates
 
     # create a set of subsets of roommate matches, including sets of 1
     for person in people:
@@ -69,22 +75,22 @@ def main():
 
     maleRooms = list()
     femaleRooms = list()
-    # while pairedMales and len(soloMales) >= 2:
-    #     maleRooms.append((*pairedMales.pop(), soloMales.pop(),
-    #                      soloMales.pop()))
-    # while pairedMales:  # soloMales ran out
-    #     if soloMales:
-    #         maleRooms.append((*pairedMales.pop(), soloMales.pop()))
-    #     else:
-    #         maleRooms.append((*pairedMales.pop(), *pairedMales.pop()))
-    # while len(soloMales) >= 4:  # no more pairs
-    #     maleRooms.append((soloMales.pop(), soloMales.pop(), soloMales.pop(),
-    #                      soloMales.pop()))
-    # rl = list()
-    # while soloMales:
-    #     rl.append(soloMales.pop())
-    # maleRooms.append(tuple(rl))
-    #
+    while pairedMales and len(soloMales) >= 2:
+        maleRooms.append((*pairedMales.pop(), soloMales.pop(),
+                         soloMales.pop()))
+    while pairedMales:  # soloMales ran out
+        if soloMales:
+            maleRooms.append((*pairedMales.pop(), soloMales.pop()))
+        else:
+            maleRooms.append((*pairedMales.pop(), *pairedMales.pop()))
+    while len(soloMales) >= 4:  # no more pairs
+        maleRooms.append((soloMales.pop(), soloMales.pop(), soloMales.pop(),
+                         soloMales.pop()))
+    rl = list()
+    while soloMales:
+        rl.append(soloMales.pop())
+    maleRooms.append(tuple(rl))
+
     while pairedFemales and len(soloFemales) >= 2:
         femaleRooms.append((*pairedFemales.pop(), soloFemales.pop(),
                            soloFemales.pop()))
