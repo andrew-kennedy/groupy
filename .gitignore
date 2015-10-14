@@ -1,5 +1,9 @@
 # Created by https://www.gitignore.io/api/osx,python
 
+# Project Specific
+data
+output
+
 ### OSX ###
 .DS_Store
 .AppleDouble

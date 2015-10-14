@@ -9,16 +9,27 @@ import csv
 
 
 def main():
-    people = set(person for person in
-                 read_csv_data('FallRetreat2015Registrantsv2.csv'))
-    peopleNames = [person.full_name for person in people]
+    originalPeople = set(person for person in
+                         read_csv_data('data/FR2015Registrantsv2.csv'))
+    finalPeople = set(person for person in
+                      read_csv_data('data/FR2015RegistrantsFinal.csv'))
+    newPeople = finalPeople.difference(originalPeople)
+
+    peopleNames = [person.full_name for person in newPeople]
+    newPeopleWithRoommates = [person for person in newPeople
+                              if person.roommates]
+    newPeopleWithoutRoommates = [person for person in newPeople
+                                 if not person.roommates]
+    shuffle(newPeopleWithRoommates)
+    shuffle(newPeopleWithoutRoommates)
+    newPeople = newPeopleWithRoommates + newPeopleWithoutRoommates
     matchedMales = set()
     usedPeople = set()
     matchedFemales = set()
-    print(len(people))
+    print(len(newPeople))
 
     # create a set of subsets of roommate matches, including sets of 1
-    for person in people:
+    for person in newPeople:
         matchedRoommates = fuzzy_match_roommates(peopleNames, person.roommates)
         nodeSet = set()
         if person not in usedPeople:
@@ -101,7 +112,7 @@ def main():
         fl.append(soloFemales.pop())
     femaleRooms.append(tuple(fl))
 
-    write_csv_data("test.csv", maleRooms, femaleRooms)
+    write_csv_data("output/test.csv", maleRooms, femaleRooms)
 
 
 def write_csv_data(path, maleRoomList, femaleRoomList):
