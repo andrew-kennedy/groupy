@@ -9,118 +9,123 @@ import csv
 
 
 def main():
-    people = set(person for person in
-                 read_csv_data('data/FR2015RegistrantsFinal.csv'))
-    peopleNames = [person.full_name for person in people]
-    matchedMales = set()
-    usedPeople = set()
-    matchedFemales = set()
-    print(len(people))
-    peopleWithRoommates = [person for person in people if person.roommates]
-    peopleWithoutRoommates = [person for person in people
-                              if not person.roommates]
-    shuffle(peopleWithRoommates)
-    shuffle(peopleWithoutRoommates)
-    people = peopleWithRoommates + peopleWithoutRoommates
+    attendees = set(person for person in
+                    read_csv_data('data/Master Spreadsheet.csv'))
+    leaders = set(person for person in
+                  read_csv_data('data/DgroupLeaders.csv'))
+    leaderNames = set(person.full_name for person in leaders)
+    print(len(attendees))
+    print(len(leaders))
+    # remove the leaders from the attendees
+    attendees = attendees.difference(
+        person_set_from_name_set(leaderNames, attendees))
+    maleAttendees = [person for person in attendees if person.gender == 'Male']
+    femaleAttendees = [person for person in attendees
+                       if person.gender == 'Female']
+    shuffle(maleAttendees)
+    shuffle(femaleAttendees)
+    maleLeaders = [person for person in leaders if person.gender == 'Male']
+    femaleLeaders = [person for person in leaders if person.gender == 'Female']
+    shuffle(maleLeaders)
+    shuffle(femaleLeaders)
+    maleLeads = {}
+    femaleLeads = {}
+    maleLeads['junior'] = [person for person in maleLeaders if
+                           person.year == 'Junior']
+    maleLeads['senior'] = [person for person in maleLeaders if
+                           person.year != 'Junior']
+    femaleLeads = {}
+    femaleLeads['junior'] = [person for person in femaleLeaders if
+                             person.year == 'Junior']
+    femaleLeads['senior'] = [person for person in femaleLeaders if
+                             person.year != 'Junior']
+    males = {}
+    females = {}
+    males['freshman'] = [person for person in maleAttendees if
+                         person.year == 'Freshman']
+    males['sophomore'] = [person for person in maleAttendees
+                          if person.year == 'Sophomore']
+    males['junior'] = [person for person in maleAttendees
+                       if person.year == 'Junior']
+    males['senior'] = [person for person in maleAttendees if
+                       person.year != 'Freshman' and
+                       person.year != 'Sophomore' and
+                       person.year != 'Junior']
+    females['freshman'] = [person for person in femaleAttendees
+                           if person.year == 'Freshman']
+    females['sophomore'] = [person for person in femaleAttendees
+                            if person.year == 'Sophomore']
+    females['junior'] = [person for person in femaleAttendees
+                         if person.year == 'Junior']
+    females['senior'] = [person for person in femaleAttendees if
+                         person.year != 'Freshman' and
+                         person.year != 'Sophomore' and
+                         person.year != 'Junior']
+    calculate_ratios(femaleLeads, females)
+    calculate_ratios(maleLeads, males)
 
-    # create a set of subsets of roommate matches, including sets of 1
-    for person in people:
-        matchedRoommates = fuzzy_match_roommates(peopleNames, person.roommates)
-        nodeSet = set()
-        if person not in usedPeople:
-            nodeSet.add(person)
-            usedPeople.add(person)
-            for name in matchedRoommates:
-                node = node_from_name(people, name)
-                if node and node not in usedPeople:
-                    nodeSet.add(node)
-                    usedPeople.add(node)
-            # set done being altered, freeze it for hashability
-            nodeSet = frozenset(nodeSet)
-            if person.gender == 'Male':
-                matchedMales.add(nodeSet)
-            else:
-                matchedFemales.add(nodeSet)
-
-    soloMales = set()
-    pairedMales = set()
-    soloFemales = set()
-    pairedFemales = set()
-    for s in matchedMales:
-        if len(s) > 1:
-            pairedMales.add(s)
-        else:
-            soloMales.add(*s)
-
-    for s in matchedFemales:
-        if len(s) > 1:
-            pairedFemales.add(s)
-        else:
-            soloFemales.add(*s)
-
-    soloMales = list(soloMales)
-    pairedMales = list(pairedMales)
-    soloFemales = list(soloFemales)
-    pairedFemales = list(pairedFemales)
-
-    shuffle(soloMales)
-    shuffle(pairedMales)
-    shuffle(soloFemales)
-    shuffle(pairedFemales)
-
-    print(len(soloMales))
-    print(len(pairedMales))
-    print(len(soloFemales))
-    print(len(pairedFemales))
-
-    maleRooms = list()
-    femaleRooms = list()
-    while pairedMales and len(soloMales) >= 2:
-        maleRooms.append((*pairedMales.pop(), soloMales.pop(),
-                         soloMales.pop()))
-    while pairedMales:  # soloMales ran out
-        if soloMales:
-            maleRooms.append((*pairedMales.pop(), soloMales.pop()))
-        else:
-            maleRooms.append((*pairedMales.pop(), *pairedMales.pop()))
-    while len(soloMales) >= 4:  # no more pairs
-        maleRooms.append((soloMales.pop(), soloMales.pop(), soloMales.pop(),
-                         soloMales.pop()))
-    rl = list()
-    while soloMales:
-        rl.append(soloMales.pop())
-    maleRooms.append(tuple(rl))
-
-    while pairedFemales and len(soloFemales) >= 2:
-        femaleRooms.append((*pairedFemales.pop(), soloFemales.pop(),
-                           soloFemales.pop()))
-    while pairedFemales:  # soloMales got too short
-        if soloFemales:
-            femaleRooms.append((*pairedFemales.pop(), soloFemales.pop()))
-        else:
-            femaleRooms.append((*pairedFemales.pop(), *pairedFemales.pop()))
-    while len(soloFemales) >= 4:  # no more pairs
-        femaleRooms.append((soloFemales.pop(), soloFemales.pop(),
-                           soloFemales.pop(), soloFemales.pop()))
-    fl = list()
-    while soloFemales:
-        fl.append(soloFemales.pop())
-    femaleRooms.append(tuple(fl))
-
-    write_csv_data("test.csv", maleRooms, femaleRooms)
+    maleGroups = create_groups(maleLeaders, males)
+    femaleGroups = create_groups(femaleLeaders, femaleAttendees)
+    write_csv_data('output/discussionGroups.csv', maleGroups, femaleGroups)
 
 
-def write_csv_data(path, maleRoomList, femaleRoomList):
+def shuffle_all(leaders, attendees):
+    shuffle(leaders['junior'])
+    shuffle(leaders['senior'])
+    shuffle(attendees['freshman'])
+    shuffle(attendees['sophomore'])
+    shuffle(attendees['junior'])
+    shuffle(attendees['senior'])
+
+
+def create_groups(leaders, members):
+    groups = []
+    while leaders:
+        group = []
+        group.append(leaders.pop())
+        while len(group) < 4:
+            for item in shuffle(members.items()):
+                if item[0] not group[0].year:
+                    group
+        groups.append(group)
+    return groups
+
+
+def person_set_from_name_set(nameSet, personSet):
+    retSet = set()
+    for person in personSet:
+        if person.full_name in nameSet:
+            retSet.add(person)
+    return retSet
+
+
+def calculate_ratios(leadersDict, attendeesDict):
+    total = (len(leadersDict['junior']) +
+             len(leadersDict['senior']) +
+             len(attendeesDict['freshman']) +
+             len(attendeesDict['sophomore']) +
+             len(attendeesDict['junior']) +
+             len(attendeesDict['senior']))
+    print("total is " + str(total))
+    attendeesDict['freshmanRatio'] = len(attendeesDict['freshman']) / total
+    attendeesDict['sophomoreRatio'] = len(attendeesDict['sophomore']) / total
+    attendeesDict['juniorRatio'] = (len(attendeesDict['junior']) +
+                                    len(leadersDict['junior'])) / total
+    attendeesDict['seniorRatio'] = (len(attendeesDict['senior']) +
+                                    len(leadersDict['senior'])) / total
+
+
+def write_csv_data(path, maleGroups, femaleGroups):
     with open(path, 'w') as data:
         writer = csv.writer(data)
         writer.writerow(PersonNode._fields)
-        for room in maleRoomList:
-            for person in room:
+        for group in maleGroups:
+            for person in group:
                 writer.writerow(person)
             writer.writerow("")
         writer.writerow("")
-        for room in femaleRoomList:
-            for person in room:
+        for group in femaleGroups:
+            for person in group:
                 writer.writerow(person)
             writer.writerow("")
 
@@ -135,8 +140,6 @@ def node_from_name(people, name):
 
 def read_csv_data(path):
     with open(path, 'rU') as data:
-        # skip the header
-        data.readline()
         reader = csv.reader(data)
         for row in map(PersonNode._make, reader):
             yield row
@@ -154,7 +157,7 @@ def fuzzy_match_roommates(nameList, roommateString):
 
 
 fields = ['first_name', 'last_name', 'email', 'phone', 'gender',
-          'roommates']
+          'year']
 
 
 class PersonNode(namedtuple('PersonNode_', fields)):
